@@ -21,7 +21,6 @@ def get_url_page_list(url_main, params):
         for i in range(start_page,len(h3_tags)):
             url_page = url_base + h3_tags[i].a.get('href')
             page_title = h3_tags[i].a.contents[0]
-            print("url_page---" + url_page + ' ' + page_title)
             url_page_list.append(url_page)
             page_title_list.append(page_title)
 
@@ -51,7 +50,7 @@ def save_pic(src_list):
         pic_name = i.split('/')[-1]
         if not os.path.exists(pic_name):
             try:
-                r_pic = requests.get(i, headers=agent)
+                r_pic = requests.get(i, headers=agent, timeout=2)
                 with open(pic_name, 'wb') as f:
                     f.write(r_pic.content)
                 print("succeeded to save pic: " + pic_name + " " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
@@ -61,6 +60,12 @@ def save_pic(src_list):
         else:
             print("file already exists: " + pic_name)
 
+def del_empty_folder(path):
+    file_list = os.listdir(path)
+    for i in file_list:
+        if os.path.isdir(path + i) and len(os.listdir(path + i)) == 0:
+            print("deleting folder " + path + i)
+            os.rmdir(path + i)
 
 def download():
     if not os.path.exists('1024'):
@@ -74,8 +79,16 @@ def download():
         page_list_len = len(url_page_list)
         for j in range(page_list_len):
             src_list = get_src_list(url_page_list[j])
-            if not os.path.exists(page_title_list[j]):
-                os.mkdir(page_title_list[j])
-            os.chdir(page_title_list[j])
-            save_pic(src_list)
-            os.chdir('..')
+            try:
+                if not os.path.exists(page_title_list[j]):
+                    os.mkdir(page_title_list[j].strip('?*"\\:<>|/'))
+                os.chdir(page_title_list[j])
+                save_pic(src_list)
+                os.chdir('..')
+            except:
+                print("failed to create a folder: " + str(page_title_list[j]))
+    file_list = os.listdir()
+    for i in file_list:
+        if len(os.listdir(i)) == 0:
+            os.rmdir(i)
+    print("finished download!")
