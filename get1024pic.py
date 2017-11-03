@@ -18,14 +18,15 @@ def get_url_page_list(url_main, params):
         start_page = 0
         if params['page'] == '1':
             start_page = 9
-        for i in range(start_page,len(h3_tags)):
+        for i in range(start_page,len(h3_tags) + 1):
             url_page = url_base + h3_tags[i].a.get('href')
-            page_title = h3_tags[i].a.contents[0]
+            page_title = h3_tags[i].string
+            print('----page_title in page ' + params['page'] + '----' + page_title)
             url_page_list.append(url_page)
             page_title_list.append(page_title)
 
-    except:
-        print('failed to get page list. ')
+    except Exception as e:
+        print('failed to get page list in page ' + params['page'])
     return url_page_list, page_title_list
     
 
@@ -53,10 +54,12 @@ def save_pic(src_list):
                 r_pic = requests.get(i, headers=agent, timeout=2)
                 with open(pic_name, 'wb') as f:
                     f.write(r_pic.content)
-                print("succeeded to save pic: " + pic_name + " " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+                print("succeeded to save pic: " + pic_name + " " + 
+                    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             except Exception as ex:
                 print(str(ex))
-                print("failed to save pic: " + pic_name + " " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+                print("failed to save pic: " + pic_name + " " + 
+                    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
         else:
             print("file already exists: " + pic_name)
 
@@ -67,13 +70,13 @@ def del_empty_folder(path):
             print("deleting folder " + path + i)
             os.rmdir(path + i)
 
-def download():
+def main(fid=16, page=3):
     if not os.path.exists('1024'):
         os.mkdir('1024')
     os.chdir('1024')
     url_main = 'http://t66y.com/thread0806.php'
-    params = {'fid':'16','search':'','page':'0'}
-    for i in range(1,11):
+    params = {'fid':fid,'search':'','page':'0'}
+    for i in range(1, page + 1):
         params['page'] = str(i)
         url_page_list, page_title_list = get_url_page_list(url_main, params)
         page_list_len = len(url_page_list)
@@ -81,7 +84,7 @@ def download():
             src_list = get_src_list(url_page_list[j])
             try:
                 if not os.path.exists(page_title_list[j]):
-                    os.mkdir(page_title_list[j].strip('?*"\\:<>|/'))
+                    os.mkdir(page_title_list[j].strip('<>'))
                 os.chdir(page_title_list[j])
                 save_pic(src_list)
                 os.chdir('..')
@@ -92,3 +95,6 @@ def download():
         if len(os.listdir(i)) == 0:
             os.rmdir(i)
     print("finished download!")
+
+if __name__ == '__main__':
+    main()
